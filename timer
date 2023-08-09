@@ -1,0 +1,36 @@
+using System;
+using System.Timers;
+
+public class TimerExample
+{
+    private static Timer _timer;
+
+    public static void Main(string[] args)
+    {
+        _timer = new Timer(10 * 60 * 1000); // 10 minutes in milliseconds
+        _timer.Elapsed += OnTimerElapsed;
+        _timer.AutoReset = true;
+        _timer.Start();
+
+        Console.WriteLine("Timer started. Press Enter to exit.");
+        Console.ReadLine();
+
+        _timer.Stop();
+        _timer.Dispose();
+    }
+
+    private static void OnTimerElapsed(object sender, ElapsedEventArgs e)
+    {
+        // This method will be called every 10 minutes
+        Console.WriteLine($"Timer elapsed at: {e.SignalTime}");
+        ProcessData();
+    }
+
+    private static void ProcessData()
+    {
+        // Your logic to process data here
+
+        // Return a response (if needed)
+        Console.WriteLine("Data processed.");
+    }
+}
