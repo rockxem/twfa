@@ -34,3 +34,25 @@ public class TimerExample
         Console.WriteLine("Data processed.");
     }
 }
+
+
+
+var claimsPrincipal = _accountService.GetClaimsPrincipalFromToken(request.Token);
+            var userIdClaim = claimsPrincipal.FindFirst(CommonClaimTypes.AspNetUserId);
+            var user = await _userManager.FindByIdAsync(userIdClaim.Value);
+
+            if (!_accountService.ValidateRefreshToken(request.RefreshToken,user.Id))
+            {
+                return BadRequest(new Response { Status = "Error", Message = "Either the refreshToken is not valid or it does not belong to the requested user" });
+            }
+
+            var userTokenData = await GetTokenDataForUser(user, request.RefreshToken);
+
+            return Ok(new LoginResponse()
+            {
+                Token = userTokenData.Token,
+                Expiration = userTokenData.Expiration,
+                RefreshToken = userTokenData.RefreshToken,
+                RefreshTokenExpiration = userTokenData.RefreshTokenExpiration
+
+            });
