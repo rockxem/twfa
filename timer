@@ -56,3 +56,11 @@ var claimsPrincipal = _accountService.GetClaimsPrincipalFromToken(request.Token)
                 RefreshTokenExpiration = userTokenData.RefreshTokenExpiration
 
             });
+
+
+RefreshToken refreshTokenObj = new RefreshToken()
+            {
+                Token = Guid.NewGuid().ToString(),
+                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpirationDays),
+                UserId = userId
+            };
