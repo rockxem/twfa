@@ -1,0 +1,204 @@
+
+Certainly! Below is a step-by-step guide to creating a C# console application that reads files from a shared folder, extracts file metadata, and interacts with an SQL database using ADO.NET to read and write data. This example assumes you have a SQL Server database set up and a shared folder with the necessary files. Make sure to adjust the code according to your specific requirements.
+
+Step 1: Create a new Console Application in Visual Studio.
+
+Step 2: Install the necessary NuGet packages.
+You'll need to install the following NuGet packages:
+
+System.IO.Abstractions
+System.Data.SqlClient
+You can install these packages using the NuGet Package Manager in Visual Studio.
+
+Step 3: Create a class for file metadata.
+
+
+using System;
+
+namespace FileMetadataApp
+{
+    public class FileMetadata
+    {
+        public string FileName { get; set; }
+        public DateTime CreationTime { get; set; }
+        public long SizeBytes { get; set; }
+    }
+}
+
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Security.AccessControl;
+using System.Security.Principal;
+using System.Security.Permissions;
+using System.Text;
+using System.Data.SqlClient;
+using System.Data;
+
+namespace FileMetadataApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string sharedFolderPath = @"\\server\share\folder"; // Replace with your shared folder path
+            string connectionString = "your_connection_string"; // Replace with your SQL Server connection string
+
+            List<FileMetadata> fileMetadataList = new List<FileMetadata>();
+
+            try
+            {
+                DirectoryInfo directory = new DirectoryInfo(sharedFolderPath);
+                FileInfo[] files = directory.GetFiles();
+
+                foreach (FileInfo file in files)
+                {
+                    FileSecurity fileSecurity = file.GetAccessControl();
+                    AuthorizationRuleCollection ruleCollection = fileSecurity.GetAccessRules(true, true, typeof(NTAccount));
+
+                    FileMetadata metadata = new FileMetadata
+                    {
+                        FileName = file.Name,
+                        CreationTime = file.CreationTime,
+                        SizeBytes = file.Length
+                    };
+
+                    fileMetadataList.Add(metadata);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error reading files: " + ex.Message);
+            }
+
+            // Connect to SQL Server and insert data
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                foreach (FileMetadata metadata in fileMetadataList)
+                {
+                    using (SqlCommand command = new SqlCommand("INSERT INTO FileMetadata (FileName, CreationTime, SizeBytes) VALUES (@FileName, @CreationTime, @SizeBytes)", connection))
+                    {
+                        command.Parameters.AddWithValue("@FileName", metadata.FileName);
+                        command.Parameters.AddWithValue("@CreationTime", metadata.CreationTime);
+                        command.Parameters.AddWithValue("@SizeBytes", metadata.SizeBytes);
+
+                        command.ExecuteNonQuery();
+                    }
+                }
+            }
+
+            Console.WriteLine("Data inserted into database.");
+
+            Console.ReadLine();
+        }
+    }
+}
+
+
+n this example, replace "your_connection_string" with your actual SQL Server connection string, and adjust the sharedFolderPath to the path of your shared folder. Also, make sure you have the necessary permissions to access the shared folder and the SQL Server database.
+
+This example demonstrates the basic steps for achieving your goal. You might need to further enhance error handling, database schema, and other aspects based on your specific requirements and environment.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Certainly! Here's a basic step-by-step guide to creating a C# console application that reads data from an SQL database using ADO.NET and then writes the data back to the database. This example assumes you have a SQL Server database set up and a table named "UserData" in it. Make sure to adjust the code according to your specific requirements.
+
+Step 1: Create a new Console Application in Visual Studio.
+
+Step 2: Install the necessary NuGet package.
+You'll need to install the System.Data.SqlClient NuGet package if it's not already added.
+
+Step 3: Write the code to read data from SQL and write it back.
+
+
+using System;
+using System.Data.SqlClient;
+
+namespace ReadWriteDataApp
+{
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            string connectionString = "your_connection_string"; // Replace with your SQL Server connection string
+
+            // Read data from SQL
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string selectQuery = "SELECT Id, FirstName, LastName FROM UserData";
+                using (SqlCommand selectCommand = new SqlCommand(selectQuery, connection))
+                {
+                    using (SqlDataReader reader = selectCommand.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            int id = (int)reader["Id"];
+                            string firstName = reader["FirstName"].ToString();
+                            string lastName = reader["LastName"].ToString();
+
+                            Console.WriteLine($"Id: {id}, FirstName: {firstName}, LastName: {lastName}");
+                        }
+                    }
+                }
+            }
+
+            // Write data back to SQL
+            using (SqlConnection connection = new SqlConnection(connectionString))
+            {
+                connection.Open();
+
+                string insertQuery = "INSERT INTO UserData (FirstName, LastName) VALUES (@FirstName, @LastName)";
+                using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                {
+                    insertCommand.Parameters.AddWithValue("@FirstName", "John");
+                    insertCommand.Parameters.AddWithValue("@LastName", "Doe");
+
+                    int rowsInserted = insertCommand.ExecuteNonQuery();
+                    Console.WriteLine($"Rows inserted: {rowsInserted}");
+                }
+            }
+
+            Console.ReadLine();
+        }
+    }
+}
+
+
+
+
+Replace "your_connection_string" with your actual SQL Server connection string.
+
+In this example, the program first reads data from the "UserData" table and prints it to the console. Then, it inserts new data into the table.
+
+Remember to adjust the table name, column names, and data as per your database schema and requirements.
+
+This example provides a basic framework for reading and writing data using ADO.NET. Depending on your application's complexity, you might want to implement error handling, better data models, and other features.
