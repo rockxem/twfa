@@ -202,3 +202,10 @@ In this example, the program first reads data from the "UserData" table and prin
 Remember to adjust the table name, column names, and data as per your database schema and requirements.
 
 This example provides a basic framework for reading and writing data using ADO.NET. Depending on your application's complexity, you might want to implement error handling, better data models, and other features.
+
+
+
+---------------
+
+
+ConfigurationManager.ConnectionStrings["MyConnectionString"].ConnectionString;
