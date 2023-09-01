@@ -274,3 +274,18 @@ FileName varchar(100),
 )
 
 
+
+
+
+
+-- Row 1
+INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
+VALUES (1, 'Interface 1', 'Daily', 'Every Day', '08:00', 'Monday, Tuesday, Wednesday, Thursday, Friday', '', '', '', '/path/to/files', 'file1.txt');
+
+-- Row 2
+INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
+VALUES (2, 'Interface 2', 'Weekly', 'Every Week', '10:30', '', '', 'Sunday', '', '/path/to/files', 'file2.txt');
+
+-- Row 3
+INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
+VALUES (3, 'Interface 3', 'Monthly', 'Every Month', '15:45', '', '1st, 15th', '', '', '/path/to/files', 'file3.txt');
