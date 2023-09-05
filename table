@@ -9,3 +9,17 @@ MonthlyScheduleDaysOfMonth varchar(100),
 FilePath varchar(100),
 FileName varchar(100),
 )
+
+
+
+public class FileStatusSchedule
+{
+    public int InterfaceId { get; set; }
+    public string InterfaceName { get; set; }
+    public string JobType { get; set; }
+    public string JobScheduleTimeHHMM { get; set; }
+    public string WeeklyScheuleDaysOfWeek { get; set; }
+    public string MonthlyScheduleDaysOfMonth { get; set; }
+    public string FilePath { get; set; }
+    public string FileName { get; set; }
+}
