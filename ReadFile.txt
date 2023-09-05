@@ -337,3 +337,26 @@ class Program
         }
     }
 }
+
+
+
+
+
+static int ConvertHHMMToMinutes(string hhmm)
+    {
+        if (hhmm.Length != 4 || !int.TryParse(hhmm, out int timeValue))
+        {
+            throw new ArgumentException("Invalid time format. Use 'hhmm' format, e.g., '1430' for 14:30.");
+        }
+
+        int hours = timeValue / 100;
+        int minutes = timeValue % 100;
+
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)
+        {
+            throw new ArgumentException("Invalid time values. Hours should be between 0-23 and minutes between 0-59.");
+        }
+
+        int totalMinutes = (hours * 60) + minutes;
+        return totalMinutes;
+    }
