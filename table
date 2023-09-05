@@ -1,0 +1,11 @@
+create table FileStatusSchedule
+(
+InterfaceId INT PRIMARY KEY, 
+InterfaceName varchar(100),
+JobType varchar(100),
+JobScheduleTimeHHMM varchar(100),
+WeeklyScheuleDaysOfWeek varchar(100),
+MonthlyScheduleDaysOfMonth varchar(100),
+FilePath varchar(100),
+FileName varchar(100),
+)
