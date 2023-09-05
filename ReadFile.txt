@@ -360,3 +360,65 @@ static int ConvertHHMMToMinutes(string hhmm)
         int totalMinutes = (hours * 60) + minutes;
         return totalMinutes;
     }
+
+
+
+
+using System;
+using System.Threading;
+using System.Collections.Generic;
+
+class Program
+{
+    static void Main(string[] args)
+    {
+        // Define a list of scheduled jobs with their respective times
+        var scheduledJobs = new List<ScheduledJob>
+        {
+            new ScheduledJob("Job 1", new TimeSpan(0, 1, 0)),    // 1 minute from now
+            new ScheduledJob("Job 2", new TimeSpan(0, 5, 0)),    // 5 minutes from now
+            new ScheduledJob("Job 3", new TimeSpan(0, 10, 0)),   // 10 minutes from now
+        };
+
+        Console.WriteLine("Console App Started");
+
+        foreach (var job in scheduledJobs)
+        {
+            ScheduleJob(job);
+        }
+
+        // Keep the console application running
+        Console.ReadLine();
+    }
+
+    private static void ScheduleJob(ScheduledJob job)
+    {
+        // Calculate the time until the job should run
+        TimeSpan timeUntilScheduledRun = job.ScheduledTime;
+
+        // Create a timer that will execute the job at the specified time
+        Timer timer = new Timer(state => DoWork(job.Name), null, timeUntilScheduledRun, Timeout.InfiniteTimeSpan);
+    }
+
+    private static void DoWork(string jobName)
+    {
+        // This method will be called at the specified time for each job
+        Console.WriteLine($"Job '{jobName}' executed at {DateTime.Now}");
+
+        // Optionally, reschedule the job for the next occurrence
+        // ScheduleJob(job);
+    }
+}
+
+class ScheduledJob
+{
+    public string Name { get; }
+    public TimeSpan ScheduledTime { get; }
+
+    public ScheduledJob(string name, TimeSpan scheduledTime)
+    {
+        Name = name;
+        ScheduledTime = scheduledTime;
+    }
+}
+
