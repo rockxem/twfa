@@ -422,3 +422,15 @@ class ScheduledJob
     }
 }
 
+
+
+
+<system.web>
+    <!-- ... other settings ... -->
+
+    <!-- Enable tracing -->
+    <trace enabled="true" pageOutput="false" localOnly="false"/>
+</system.web>
+
+
+<%@ Page Trace="true" %>
