@@ -1,7 +1,8 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+
 using System.ComponentModel;
-using System.Data;
+using System.Data; 
 using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
@@ -12,7 +13,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace TestWindowsFormsApp
-{
+ {
     public partial class Form1 : Form
     {
         private readonly SynchronizationContext synchronizationContext;
@@ -33,7 +34,7 @@ namespace TestWindowsFormsApp
         public async Task DoTheTest(int Minutes)
         {
             int setMinutesToRunFor = Minutes; // the code will run for these many Minutes
-            int waitTime = 25000;
+            int waitTime = 40000;
             int iterationCounter = 1;
             sw.Start();
             
@@ -49,7 +50,7 @@ namespace TestWindowsFormsApp
                     break;
                 }                
                 Thread.Sleep(waitTime); // Loop time to repeat task
-                Process p = Process.GetProcessesByName("Teams").FirstOrDefault();
+                Process p = Process.GetProcessesByName("Teams").FirstOrDefault() == null ? Process.GetProcessesByName("ms-teams").FirstOrDefault() : Process.GetProcessesByName("Teams").FirstOrDefault();
                 if (p != null)
                 {
                     IntPtr h = p.MainWindowHandle;
@@ -125,6 +126,7 @@ namespace TestWindowsFormsApp
                 label4.Visible = true;
                 label5.Visible = true;
                 DateTime dt = DateTime.Now;
+                label2.Text = $"{dt.ToString()}";
                 label2.Text = $"{dt.ToString()}";
                 label1.ForeColor = Color.Black;
                 label1.Text = "0.1 minutes";
