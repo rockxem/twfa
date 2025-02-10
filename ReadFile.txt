@@ -1,436 +1,278 @@
-
-Certainly! Below is a step-by-step guide to creating a C# console application that reads files from a shared folder, extracts file metadata, and interacts with an SQL database using ADO.NET to read and write data. This example assumes you have a SQL Server database set up and a shared folder with the necessary files. Make sure to adjust the code according to your specific requirements.
-
-Step 1: Create a new Console Application in Visual Studio.
-
-Step 2: Install the necessary NuGet packages.
-You'll need to install the following NuGet packages:
-
-System.IO.Abstractions
-System.Data.SqlClient
-You can install these packages using the NuGet Package Manager in Visual Studio.
-
-Step 3: Create a class for file metadata.
-
-
-using System;
-
-namespace FileMetadataApp
-{
-    public class FileMetadata
-    {
-        public string FileName { get; set; }
-        public DateTime CreationTime { get; set; }
-        public long SizeBytes { get; set; }
-    }
-}
-
-
-
-
--- Row 1
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (1, 'Interface 1', 'Daily', 'Every Day', '08:00', 'Monday, Tuesday, Wednesday, Thursday, Friday', '', '', '', '/path/to/files', 'file1.txt');
-
--- Row 2
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (2, 'Interface 2', 'Weekly', 'Every Week', '10:30', '', '', 'Sunday', '', '/path/to/files', 'file2.txt');
-
--- Row 3
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (3, 'Interface 3', 'Monthly', 'Every Month', '15:45', '', '1st, 15th', '', '', '/path/to/files', 'file3.txt');
-
-using System;
-using System.IO;
-using System.Linq;
-using System.Collections.Generic;
-using System.Security.AccessControl;
-using System.Security.Principal;
-using System.Security.Permissions;
-using System.Text;
-using System.Data.SqlClient;
-using System.Data;
-
-namespace FileMetadataApp
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            string sharedFolderPath = @"\\server\share\folder"; // Replace with your shared folder path
-            string connectionString = "your_connection_string"; // Replace with your SQL Server connection string
-
-            List<FileMetadata> fileMetadataList = new List<FileMetadata>();
-
-            try
-            {
-                DirectoryInfo directory = new DirectoryInfo(sharedFolderPath);
-                FileInfo[] files = directory.GetFiles();
-
-                foreach (FileInfo file in files)
-                {
-                    FileSecurity fileSecurity = file.GetAccessControl();
-                    AuthorizationRuleCollection ruleCollection = fileSecurity.GetAccessRules(true, true, typeof(NTAccount));
-
-                    FileMetadata metadata = new FileMetadata
-                    {
-                        FileName = file.Name,
-                        CreationTime = file.CreationTime,
-                        SizeBytes = file.Length
-                    };
-
-                    fileMetadataList.Add(metadata);
+"use strict";
+var ContactForm;
+(function (ContactForm) {
+    let CONST = {
+        IsManualStageChange: false,
+        IsCustomSave: false,
+        CreateOpportunityStageName: "Prospecting",
+        MembershipProspectingTypeValue: "100000001",
+        MembershipSuspectTypeValue: "100000005",
+        OpportunityTypeProspectingValue: "867590000",
+        Control: {
+            MembershipType: "customertypecode",
+            BPF_Control: [] = [
+                { stage: "Prospecting", controlId: "mwa_isprospectingtaskscompleted", templateName: "Contact Prospecting Checklist" },
+                { stage: "Needs Analysis", controlId: null, templateName: "Opportunity Type Prospecting Checklist" },
+                { stage: "Product Selection", controlId: null, templateName: "Opportunity Type Prospecting Checklist" },
+                { stage: "Application", controlId: null, templateName: "Opportunity Type Prospecting Checklist" },
+                { stage: "Pending Business", controlId: null, templateName: "Opportunity Type Prospecting Checklist" }
+            ]
+        }
+    };
+    ContactForm.onFormLoad = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        const isVisible = setBPFVisibility(executionContext);
+        onStageClickedEvent(executionContext);
+        formContext.data.entity.addOnSave(onFormSave);
+        if (isVisible) {
+            formContext.data.process.addOnStageSelected(onStageClickedEvent);
+            formContext.data.process.addOnPreStageChange(bpfStageChangeEvent);
+        }
+    };
+    const onFormSave = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        //@ts-ignore 
+        const eventArgs = executionContext.getEventArgs();
+        // Check if the specific field value was modified
+        const isFieldDirty = formContext.getAttribute(CONST.Control.MembershipType).getIsDirty();
+        if (isFieldDirty && !CONST.IsCustomSave) {
+            // Refresh the form after the save operation completes
+            eventArgs.preventDefault(); // Ensure we manually handle save and refresh
+            CONST.IsCustomSave = true;
+            setTimeout(() => {
+                //@ts-ignore  Then, explicitly save the form
+                formContext.data.save(1).then(function success() {
+                    // Reset the flag after save completes
+                    CONST.IsCustomSave = false;
+                    window.location.reload();
+                }, function (error) {
+                    CONST.IsCustomSave = false;
+                    // Handle save error
+                    console.log("Save failed with error: " + error.message);
+                });
+            }, 1000);
+        }
+    };
+    const setBPFVisibility = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        const membershipType = formContext.getAttribute(CONST.Control.MembershipType).getValue();
+        if (membershipType != CONST.MembershipProspectingTypeValue && membershipType != CONST.MembershipSuspectTypeValue) {
+            formContext.ui.process.setVisible(false);
+            return false;
+        }
+        return true;
+    };
+    const onStageClickedEvent = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        var interval = null;
+        interval = setInterval(function () {
+            var element = parent.document.getElementById("MscrmControls.Containers.ProcessStageControl-setActiveButtonContainer");
+            if (element && element.parentElement) {
+                element.parentElement.style.display = "none";
+                clearInterval(interval);
+            }
+        }, 10);
+        setTimeout(function () {
+            if (interval) {
+                clearInterval(interval);
+            }
+        }, 2000);
+    };
+    const bpfStageChangeEvent = (executionContext) => {
+        var _a;
+        const formContext = executionContext.getFormContext();
+        //@ts-ignore  Get the process execution context
+        const eventArgs = executionContext.getEventArgs();
+        const membershipType = formContext.getAttribute(CONST.Control.MembershipType).getValue();
+        if (eventArgs.getDirection() === "Next" && (membershipType == CONST.MembershipProspectingTypeValue || membershipType == CONST.MembershipSuspectTypeValue) && !CONST.IsManualStageChange) {
+            // Get the target stage
+            const targetStage = eventArgs.getStage();
+            const processInstance = formContext.data.process;
+            const activeStage = processInstance.getActiveStage();
+            //@ts-ignore 
+            const nextStage = executionContext._eventArgs._stage._stageStep.stageId;
+            const stageName = activeStage.getName();
+            const pendingTasks = retriveCurrentStagePendingTasks(executionContext, stageName);
+            const controlToUpdate = (_a = CONST.Control.BPF_Control.find(item => item.stage == stageName.trim())) === null || _a === void 0 ? void 0 : _a.controlId;
+            if (pendingTasks.length > 0) {
+                eventArgs.preventDefault();
+                if (controlToUpdate) {
+                    formContext.getAttribute(controlToUpdate).setValue(false);
                 }
+                const alertMessage = `The below tasks for the '${stageName}' stage are still pending. Please complete them before proceeding to the next stage.\n\n${pendingTasks}`;
+                var alertSettings = { confirmButtonLabel: "OK", text: alertMessage, title: "Warning" };
+                var alertOptions = { height: 260, width: 260 };
+                Xrm.Navigation.openAlertDialog(alertSettings);
+                CONST.IsManualStageChange = false;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error reading files: " + ex.Message);
+            else {
+                if (controlToUpdate) {
+                    formContext.getAttribute(controlToUpdate).setValue(true);
+                }
+                const opportunityId = createOpportunity(executionContext);
+                const processInstanceId = associateOpportunityWithContactBPF(executionContext, opportunityId, nextStage);
+                formContext.data.save().then(function () {
+                    Xrm.Utility.openEntityForm("opportunity", opportunityId);
+                });
             }
-
-            // Connect to SQL Server and insert data
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                foreach (FileMetadata metadata in fileMetadataList)
-                {
-                    using (SqlCommand command = new SqlCommand("INSERT INTO FileMetadata (FileName, CreationTime, SizeBytes) VALUES (@FileName, @CreationTime, @SizeBytes)", connection))
-                    {
-                        command.Parameters.AddWithValue("@FileName", metadata.FileName);
-                        command.Parameters.AddWithValue("@CreationTime", metadata.CreationTime);
-                        command.Parameters.AddWithValue("@SizeBytes", metadata.SizeBytes);
-
-                        command.ExecuteNonQuery();
+        }
+        return;
+    };
+    const retriveCurrentStagePendingTasks = (executionContext, stageName) => {
+        var _a;
+        const formContext = executionContext.getFormContext();
+        const contactId = formContext.data.entity.getId();
+        let pendingTasks = "";
+        const templateName = (_a = CONST.Control.BPF_Control.find((item) => item.stage == stageName.trim())) === null || _a === void 0 ? void 0 : _a.templateName;
+        const query = `/api/data/v9.2/tasks?$select=activityid,hsl_name&$filter=(statecode ne 1 and _regardingobjectid_value eq ${contactId} and hsl_TaskListInstanceCategoryId_Task/hsl_name eq '${stageName}' and hsl_TaskListTemplateId_Task/hsl_name eq '${templateName}')`;
+        var req = new XMLHttpRequest();
+        req.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + query, false);
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Prefer", "odata.include-annotations=*");
+        req.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                req.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    console.log(results);
+                    for (var i = 0; i < results.value.length; i++) {
+                        var result = results.value[i];
+                        // Columns
+                        var taskName = result["hsl_name"];
+                        pendingTasks += `\u2022 ${taskName}\n`;
                     }
                 }
-            }
-
-            Console.WriteLine("Data inserted into database.");
-
-            Console.ReadLine();
-        }
-    }
-}
-
-
-n this example, replace "your_connection_string" with your actual SQL Server connection string, and adjust the sharedFolderPath to the path of your shared folder. Also, make sure you have the necessary permissions to access the shared folder and the SQL Server database.
-
-This example demonstrates the basic steps for achieving your goal. You might need to further enhance error handling, database schema, and other aspects based on your specific requirements and environment.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-Certainly! Here's a basic step-by-step guide to creating a C# console application that reads data from an SQL database using ADO.NET and then writes the data back to the database. This example assumes you have a SQL Server database set up and a table named "UserData" in it. Make sure to adjust the code according to your specific requirements.
-
-Step 1: Create a new Console Application in Visual Studio.
-
-Step 2: Install the necessary NuGet package.
-You'll need to install the System.Data.SqlClient NuGet package if it's not already added.
-
-Step 3: Write the code to read data from SQL and write it back.
-
-
-using System;
-using System.Data.SqlClient;
-
-namespace ReadWriteDataApp
-{
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            string connectionString = "your_connection_string"; // Replace with your SQL Server connection string
-
-            // Read data from SQL
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                string selectQuery = "SELECT Id, FirstName, LastName FROM UserData";
-                using (SqlCommand selectCommand = new SqlCommand(selectQuery, connection))
-                {
-                    using (SqlDataReader reader = selectCommand.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int id = (int)reader["Id"];
-                            string firstName = reader["FirstName"].ToString();
-                            string lastName = reader["LastName"].ToString();
-
-                            Console.WriteLine($"Id: {id}, FirstName: {firstName}, LastName: {lastName}");
-                        }
-                    }
+                else {
+                    console.log(this.responseText);
                 }
             }
-
-            // Write data back to SQL
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                connection.Open();
-
-                string insertQuery = "INSERT INTO UserData (FirstName, LastName) VALUES (@FirstName, @LastName)";
-                using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
-                {
-                    insertCommand.Parameters.AddWithValue("@FirstName", "John");
-                    insertCommand.Parameters.AddWithValue("@LastName", "Doe");
-
-                    int rowsInserted = insertCommand.ExecuteNonQuery();
-                    Console.WriteLine($"Rows inserted: {rowsInserted}");
-                }
-            }
-
-            Console.ReadLine();
-        }
-    }
-}
-
-
-
-
-Replace "your_connection_string" with your actual SQL Server connection string.
-
-In this example, the program first reads data from the "UserData" table and prints it to the console. Then, it inserts new data into the table.
-
-Remember to adjust the table name, column names, and data as per your database schema and requirements.
-
-This example provides a basic framework for reading and writing data using ADO.NET. Depending on your application's complexity, you might want to implement error handling, better data models, and other features.
-
-
-
----------------
-
-
-ConfigurationManager.ConnectionStrings["MyConnectionString"].ConnectionString;
-
-
-
-
-
-
-
-
-
-
-
-
-Software Requirements:
-Operating System: VB6 is designed to work on Windows operating systems. It's most compatible with Windows XP, Windows Vista, Windows 7, and Windows Server 2003. It may also work on later versions of Windows, but compatibility can be an issue.
-
-Visual Basic 6.0 IDE: The main software you need is the Visual Basic 6.0 IDE itself. This IDE includes the tools and environment for creating, editing, and debugging VB6 applications.
-
-Licensing:
-VB6 was initially a commercial product offered by Microsoft, but as of March 2008, it was officially retired from mainstream support. It's no longer available for purchase from Microsoft, and there are certain licensing considerations to be aware of:
-
-Existing License Holders: If you already have a licensed copy of VB6, you are allowed to continue using it under the terms of the license agreement.
-
-License Transfer: VB6 licenses cannot be transferred to other individuals or organizations.
-
-Support and Updates: Microsoft no longer provides official support or updates for VB6. This means you won't receive security updates or technical assistance from Microsoft.
-
-Compatibility: While VB6 might work on modern Windows versions, there can be compatibility issues, and you might encounter challenges related to security updates, compatibility with newer hardware, and more.
-
-Alternative Technologies: Microsoft has released newer development platforms, such as Visual Studio .NET and its subsequent versions, to replace VB6. These newer technologies offer improved features, modern language support, and better integration with contemporary Windows versions.
-
-Consider Modernization: Given the age of VB6 and its limitations, consider modernizing your applications by migrating to a more up-to-date development platform if possible.
-
-
-
-
-create table FileStatusSchedule
-(
-InterfaceId INT PRIMARY KEY, 
-InterfaceName varchar(100),
-JobType varchar(100),
-JobFrequency varchar(100),
-JobScheduleTimeHHMM varchar(100),
-DaysOfWeek varchar(500),
-DaysOfMonth varchar(500),
-WeeklyScheuleDaysOfWeek varchar(100),
-MonthlyScheduleDaysOfMonth varchar(100),
-FilePath varchar(100),
-FileName varchar(100),
-)
-
-
-
-
-
-
--- Row 1
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (1, 'Interface 1', 'Daily', 'Every Day', '08:00', 'Monday, Tuesday, Wednesday, Thursday, Friday', '', '', '', '/path/to/files', 'file1.txt');
-
--- Row 2
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (2, 'Interface 2', 'Weekly', 'Every Week', '10:30', '', '', 'Sunday', '', '/path/to/files', 'file2.txt');
-
--- Row 3
-INSERT INTO FileStatusSchedule (InterfaceId, InterfaceName, JobType, JobFrequency, JobScheduleTimeHHMM, DaysOfWeek, DaysOfMonth, WeeklyScheuleDaysOfWeek, MonthlyScheduleDaysOfMonth, FilePath, FileName)
-VALUES (3, 'Interface 3', 'Monthly', 'Every Month', '15:45', '', '1st, 15th', '', '', '/path/to/files', 'file3.txt');
-
-
-
-
-
-
-
-using System;
-using System.Data;
-using System.Data.SqlClient;
-
-class Program
-{
-    static void Main(string[] args)
-    {
-        string connectionString = "Server=YourServerName;Database=YourDatabaseName;User Id=YourUsername;Password=YourPassword;";
-
-        using (SqlConnection connection = new SqlConnection(connectionString))
-        {
-            try
-            {
-                connection.Open();
-
-                string query = "SELECT Column1, Column2 FROM YourTableName";
-                using (SqlCommand command = new SqlCommand(query, connection))
-                {
-                    using (SqlDataReader reader = command.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            int column1Value = reader.GetInt32(0);
-                            string column2Value = reader.GetString(1);
-                            Console.WriteLine($"Column1: {column1Value}, Column2: {column2Value}");
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("An error occurred: " + ex.Message);
-            }
-            finally
-            {
-                connection.Close();
-            }
-        }
-    }
-}
-
-
-
-
-
-static int ConvertHHMMToMinutes(string hhmm)
-    {
-        if (hhmm.Length != 4 || !int.TryParse(hhmm, out int timeValue))
-        {
-            throw new ArgumentException("Invalid time format. Use 'hhmm' format, e.g., '1430' for 14:30.");
-        }
-
-        int hours = timeValue / 100;
-        int minutes = timeValue % 100;
-
-        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59)
-        {
-            throw new ArgumentException("Invalid time values. Hours should be between 0-23 and minutes between 0-59.");
-        }
-
-        int totalMinutes = (hours * 60) + minutes;
-        return totalMinutes;
-    }
-
-
-
-
-using System;
-using System.Threading;
-using System.Collections.Generic;
-
-class Program
-{
-    static void Main(string[] args)
-    {
-        // Define a list of scheduled jobs with their respective times
-        var scheduledJobs = new List<ScheduledJob>
-        {
-            new ScheduledJob("Job 1", new TimeSpan(0, 1, 0)),    // 1 minute from now
-            new ScheduledJob("Job 2", new TimeSpan(0, 5, 0)),    // 5 minutes from now
-            new ScheduledJob("Job 3", new TimeSpan(0, 10, 0)),   // 10 minutes from now
         };
-
-        Console.WriteLine("Console App Started");
-
-        foreach (var job in scheduledJobs)
-        {
-            ScheduleJob(job);
+        req.send();
+        return pendingTasks;
+    };
+    const createOpportunity = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        const contactId = formContext.data.entity.getId().replace(/[{}]/g, '');
+        const firstName = formContext.getAttribute("firstname").getValue();
+        const middlename = formContext.getAttribute("middlename").getValue();
+        const lastname = formContext.getAttribute("lastname").getValue();
+        const contactName = `${(firstName + ' ' + (middlename || "")).trim()} ${lastname}`;
+        const newOpportunityName = contactName + " - Prospecting";
+        let opportunityId = getExistingOpportunity(newOpportunityName, contactId);
+        if (!opportunityId) {
+            const opportunityData = {
+                "name": newOpportunityName,
+                "parentcontactid@odata.bind": `/contacts(${contactId})`,
+                "mwa_opportunitytypecode": CONST.OpportunityTypeProspectingValue,
+            };
+            var req = new XMLHttpRequest();
+            req.open("POST", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.2/opportunities", false);
+            req.setRequestHeader("OData-MaxVersion", "4.0");
+            req.setRequestHeader("OData-Version", "4.0");
+            req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+            req.setRequestHeader("Accept", "application/json");
+            req.setRequestHeader("Prefer", "odata.include-annotations=*");
+            req.onreadystatechange = function () {
+                if (this.readyState === 4) {
+                    req.onreadystatechange = null;
+                    if (this.status === 204) {
+                        var uri = req.getResponseHeader("OData-EntityId");
+                        var regExp = /\(([^)]+)\)/;
+                        var matches = regExp.exec(uri);
+                        //@ts-ignore 
+                        var newId = matches[1];
+                        opportunityId = newId;
+                    }
+                    else {
+                        console.log(this.responseText);
+                    }
+                }
+            };
+            req.send(JSON.stringify(opportunityData));
         }
-
-        // Keep the console application running
-        Console.ReadLine();
-    }
-
-    private static void ScheduleJob(ScheduledJob job)
-    {
-        // Calculate the time until the job should run
-        TimeSpan timeUntilScheduledRun = job.ScheduledTime;
-
-        // Create a timer that will execute the job at the specified time
-        Timer timer = new Timer(state => DoWork(job.Name), null, timeUntilScheduledRun, Timeout.InfiniteTimeSpan);
-    }
-
-    private static void DoWork(string jobName)
-    {
-        // This method will be called at the specified time for each job
-        Console.WriteLine($"Job '{jobName}' executed at {DateTime.Now}");
-
-        // Optionally, reschedule the job for the next occurrence
-        // ScheduleJob(job);
-    }
-}
-
-class ScheduledJob
-{
-    public string Name { get; }
-    public TimeSpan ScheduledTime { get; }
-
-    public ScheduledJob(string name, TimeSpan scheduledTime)
-    {
-        Name = name;
-        ScheduledTime = scheduledTime;
-    }
-}
-
-
-
-
-<system.web>
-    <!-- ... other settings ... -->
-
-    <!-- Enable tracing -->
-    <trace enabled="true" pageOutput="false" localOnly="false"/>
-</system.web>
-
-
-<%@ Page Trace="true" %>
+        return opportunityId;
+    };
+    const associateOpportunityWithContactBPF = (executionContext, opportunityId, nextStageId) => {
+        const formContext = executionContext.getFormContext();
+        var processInstanceId = formContext.data.process.getInstanceId().replace("{", "").replace("}", "");
+        var currentStage = formContext.data.process.getActiveStage();
+        var currentStageId = currentStage.getId().replace("{", "").replace("}", "");
+        var bpfInstance = {
+            "bpf_opportunityid@odata.bind": "/opportunities(" + opportunityId + ")",
+            "activestageid@odata.bind": "/processstages(" + nextStageId + ")"
+        };
+        var req = new XMLHttpRequest();
+        req.open("PATCH", Xrm.Utility.getGlobalContext().getClientUrl() + "/api/data/v9.0/mwa_contactbpfleadtoprospectqualificationpros(" + processInstanceId + ")", false);
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                req.onreadystatechange = null;
+                if (this.status === 204 || this.status === 1223) {
+                    console.log("Opportunity associated with BPF");
+                }
+                else {
+                    console.log(this.responseText);
+                }
+            }
+        };
+        req.send(JSON.stringify(bpfInstance));
+        return processInstanceId;
+    };
+    const getExistingOpportunity = (opportunityName, contactId) => {
+        let existingOpportunityId = "";
+        let req = new XMLHttpRequest();
+        req.open("GET", Xrm.Utility.getGlobalContext().getClientUrl() + `/api/data/v9.2/opportunities?$select=opportunityid,name&$filter=(mwa_opportunitytypecode eq ${CONST.OpportunityTypeProspectingValue} and name eq '${opportunityName}' and _parentcontactid_value eq ${contactId})`, false);
+        req.setRequestHeader("OData-MaxVersion", "4.0");
+        req.setRequestHeader("OData-Version", "4.0");
+        req.setRequestHeader("Content-Type", "application/json; charset=utf-8");
+        req.setRequestHeader("Accept", "application/json");
+        req.setRequestHeader("Prefer", "odata.include-annotations=*");
+        req.onreadystatechange = function () {
+            if (this.readyState === 4) {
+                req.onreadystatechange = null;
+                if (this.status === 200) {
+                    var results = JSON.parse(this.response);
+                    console.log(results);
+                    for (var i = 0; i < results.value.length; i++) {
+                        var result = results.value[i];
+                        // Columns
+                        var opportunityid = result["opportunityid"];
+                        existingOpportunityId = opportunityid;
+                    }
+                }
+                else {
+                    console.log(this.responseText);
+                }
+            }
+        };
+        req.send();
+        return existingOpportunityId;
+    };
+    const getNextStage = (executionContext) => {
+        const formContext = executionContext.getFormContext();
+        var activeStage = formContext.data.process.getActiveStage();
+        var activeStageId = activeStage.getId();
+        let nextStage = null;
+        formContext.data.process.getActiveProcess().getStages().forEach(function (stage) {
+            if (stage.getId() === activeStageId) {
+                //@ts-ignore 
+                var nextStage = stage.getNextStage();
+                if (nextStage) {
+                    var nextStageId = nextStage.getId();
+                    nextStage = nextStageId;
+                }
+                else {
+                    console.log("No next stage found");
+                }
+            }
+        });
+        return "";
+    };
+})(ContactForm || (ContactForm = {}));
+;
